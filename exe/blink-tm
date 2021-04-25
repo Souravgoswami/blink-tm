@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+require 'blink_tm'
+
+# Find Device running Blink Taskmanager
+dev = nil
+retry_count = 0
+
+while(!dev)
+	dev = BlinkTM.find_device
+
+	if dev
+		puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: Device discovered successfully. Path: #{dev}#{BlinkTM::RESET}"
+	else
+		puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: No device found. Retrying #{retry_count += 1}#{BlinkTM::RESET}"
+		sleep 0.5
+	end
+end
+
+BlinkTM.start(dev)
