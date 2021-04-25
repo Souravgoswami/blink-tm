@@ -4,20 +4,23 @@ require 'blink_tm/baudrate'
 module BlinkTM
 	# Important Constants
 	BAUDRATE = BlinkTM::B57600
+	SCANID = 'BTM'
 	POLLING = 0.375
 
 	# Refresh should always get subtracted with 0.05
 	REFRESH = 0.5 - 0.05
 
-
 	# Errors
 	NoDeviceError = Class.new(StandardError)
+	DeviceNotReady = Class.new(StandardError)
 
+	# Units
 	TB = 10 ** 12
 	GB = 10 ** 9
 	MB = 10 ** 6
 	KB = 10 ** 3
 
+	# ANSI Sequences
 	RED = "\e[38;2;225;79;67m"
 	BLUE = "\e[38;2;45;125;255m"
 	GREEN = "\e[38;2;40;175;95m"

@@ -111,6 +111,9 @@ module BlinkTM
 			file = IO.open(fd)
 
 			until in_sync
+				# Clear out any extra zombie bits
+				file.syswrite(?~)
+				# Start the device
 				file.syswrite(?#)
 				file.flush
 
@@ -158,6 +161,9 @@ module BlinkTM
 				"#{convert_bytes(net_u)}#{convert_bytes(net_d)}"\
 				"#{convert_bytes(io_r)}#{convert_bytes(io_w)}"
 
+				# Rescuing from suspend
+				file.syswrite('#')
+
 				file.syswrite('!')
 				file.flush
 				sleep 0.025
@@ -175,6 +181,7 @@ module BlinkTM
 			file &.close
 			exit 0
 		rescue Errno::ENOENT, BlinkTM::NoDeviceError
+			file &.close
 			device = find_device
 
 			unless device
@@ -182,6 +189,10 @@ module BlinkTM
 				sleep 0.1
 			end
 
+			retry
+		rescue BlinkTM::DeviceNotReady
+			file &.close
+			sleep 0.1
 			retry
 		rescue Exception
 			puts $!.full_message
