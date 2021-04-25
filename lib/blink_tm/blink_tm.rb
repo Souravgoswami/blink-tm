@@ -98,8 +98,8 @@ module BlinkTM
 				sleep POLLING
 				io_stat2 = iostat()
 
-				io_r = io_stat2[0] - io_stat1[0]
-				io_w = io_stat2[1] - io_stat1[1]
+				io_r = POLLING * io_stat2[0].-(io_stat1[0])
+				io_w = POLLING * io_stat2[1].-(io_stat1[1])
 			end
 		}
 
