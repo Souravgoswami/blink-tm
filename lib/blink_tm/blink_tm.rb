@@ -34,12 +34,17 @@ module BlinkTM
 					end
 
 					if File.readable?(x)
-						if File.open(x).readpartial(30).to_s.scrub.include?("BTM")
-							puts "#{BOLD}#{ORANGE}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Multiple Blink Task "\
-							"Manager Hardware Found! "\
-							"Selecting: #{vendor}:#{product}#{RESET}" if dev
+						begin
+							if File.open(x).readpartial(30).to_s.scrub.include?("BTM")
+								puts "#{BOLD}#{ORANGE}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Multiple Blink Task "\
+								"Manager Hardware Found! "\
+								"Selecting: #{vendor}:#{product}#{RESET}" if dev
 
-							dev = x
+								dev = x
+							end
+						rescue EOFError
+							sleep 0.125
+							retry
 						end
 					end
 				}
@@ -108,6 +113,8 @@ module BlinkTM
 			until in_sync
 				file.syswrite(?#)
 				file.flush
+
+				sleep 0.125
 
 				begin
 					if file.readpartial(8000).include?(?~)
