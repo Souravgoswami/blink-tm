@@ -1,4 +1,3 @@
-
 #!/usr/bin/ruby -w
 # Frozen_String_Literal: true
 
@@ -98,8 +97,8 @@ module BlinkTM
 				sleep POLLING
 				io_stat2 = iostat()
 
-				io_r = POLLING * io_stat2[0].-(io_stat1[0])
-				io_w = POLLING * io_stat2[1].-(io_stat1[1])
+				io_r = io_stat2[0].-(io_stat1[0]) / POLLING
+				io_w = io_stat2[1].-(io_stat1[1]) / POLLING
 			end
 		}
 
@@ -207,7 +206,7 @@ module BlinkTM
 			|x| x.split[1] == ?/
 		}.to_s.split[0].to_s.split(?/).to_a[-1]
 
-		@@sector_size = LS::FS.stat(?/)[:block_size]
+		@@sector_size ||= LS::FS.stat(?/)[:block_size]
 
 		io_stat = IO.foreach('/proc/diskstats'.freeze).find { |x|
 			x.split[2] == @@root_partition
