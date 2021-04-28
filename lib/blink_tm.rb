@@ -5,10 +5,13 @@ module BlinkTM
 	# Important Constants
 	BAUDRATE = BlinkTM::B57600
 	SCANID = 'BTM'
+
+	# POLLING time, how often should CPU, Net, IO usages should be updated.
+	# Should always be a float.
 	POLLING = 0.375
 
-	# Refresh should always get subtracted with 0.05
-	REFRESH = 0.5 - 0.05
+	# Refresh time, how often the main loop should run
+	REFRESH = 0.5
 
 	# Errors
 	NoDeviceError = Class.new(StandardError)

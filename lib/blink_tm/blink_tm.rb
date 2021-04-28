@@ -97,8 +97,8 @@ module BlinkTM
 				sleep POLLING
 				io_stat2 = iostat()
 
-				io_r = io_stat2[0].-(io_stat1[0]) / POLLING
-				io_w = io_stat2[1].-(io_stat1[1]) / POLLING
+				io_r = io_stat2[0].-(io_stat1[0]).fdiv(POLLING)
+				io_w = io_stat2[1].-(io_stat1[1]).fdiv(POLLING)
 			end
 		}
 
@@ -132,6 +132,7 @@ module BlinkTM
 			end
 
 			puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device ready!#{BlinkTM::RESET}"
+			refresh = 0
 
 			while true
 				# cpu(01234) memUsed(999993) swapUsed(999992) io_active(0)
@@ -156,22 +157,14 @@ module BlinkTM
 				# "#{convert_bytes(net_u)} #{convert_bytes(net_d)} "\
 				# "#{convert_bytes(io_r)} #{convert_bytes(io_w)}"
 
-				str = "#{"%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
+				refresh ^= 1
+
+				str = "!##{"%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
 				"#{convert_bytes(net_u)}#{convert_bytes(net_d)}"\
-				"#{convert_bytes(io_r)}#{convert_bytes(io_w)}"
+				"#{convert_bytes(io_r)}#{convert_bytes(io_w)}#{refresh}~"
 
 				# Rescuing from suspend
-				file.syswrite('#')
-
-				file.syswrite('!')
-				file.flush
-				sleep 0.025
-
 				file.syswrite(str)
-				file.flush
-				sleep 0.025
-
-				file.syswrite('~')
 				file.flush
 
 				sleep REFRESH
@@ -208,14 +201,23 @@ module BlinkTM
 
 		@@sector_size ||= LS::FS.stat(?/)[:block_size]
 
-		io_stat = IO.foreach('/proc/diskstats'.freeze).find { |x|
-			x.split[2] == @@root_partition
-		} &.split.to_a
+		io = []
 
-		_io_r = io_stat[5].to_f.*(@@sector_size).round
-		_io_w = io_stat[9].to_f.*(@@sector_size).round
+		IO.foreach('/proc/diskstats') { |x|
+			splitted = x.split
 
-		[_io_r, _io_w]
+			if splitted[2] == @@root_partition
+				# IO read / write
+				io.replace([
+					splitted[5].to_i * @@sector_size,
+					splitted[9].to_i * @@sector_size
+				])
+
+				break
+			end
+		}
+
+		io
 	end
 
 	extend(self)
