@@ -33,4 +33,6 @@ module BlinkTM
 end
 
 require 'blink_tm/version'
+require 'fcntl'
+require 'linux_stat'
 require 'blink_tm/blink_tm'

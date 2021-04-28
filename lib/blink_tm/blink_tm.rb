@@ -1,9 +1,6 @@
 #!/usr/bin/ruby -w
 # Frozen_String_Literal: true
 
-require 'fcntl'
-require 'linux_stat'
-
 module BlinkTM
 	# Detect device
 	def find_device
