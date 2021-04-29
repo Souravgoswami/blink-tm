@@ -31,7 +31,7 @@ VALUE getDiskstats (volatile VALUE obj, volatile VALUE path) {
 	return rb_ary_new() ;
 }
 
-int Init_diskstats() {
+void Init_diskstats() {
 	VALUE blink_tm = rb_define_module("BlinkTM") ;
 	rb_define_module_function(blink_tm, "diskstats", getDiskstats, 1) ;
 	rb_define_module_function(blink_tm, "get_sector_size", getSectorSize, 1) ;
