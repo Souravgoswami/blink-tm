@@ -103,7 +103,7 @@ module BlinkTM
 			raise NoDeviceError unless device
 
 			in_sync = false
-			fd = IO.sysopen(device, Fcntl::O_RDWR | Fcntl::O_EXCL)
+			fd = IO.sysopen(device, Fcntl::O_RDWR)
 			file = IO.open(fd)
 
 			until in_sync
