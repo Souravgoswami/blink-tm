@@ -38,6 +38,9 @@ module BlinkTM
 	ROOT = File.split(ROOT_DEV)[-1]
 
 	SECTORS = get_sector_size(ROOT_DEV)
+
+	abort "#{BOLD}#{RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Can't get root partition#{RESET}" unless ROOT
+	abort "#{BOLD}#{RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Can't get sector size#{RESET}" unless SECTORS
 end
 
 require 'blink_tm/version'

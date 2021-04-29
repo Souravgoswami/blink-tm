@@ -9,9 +9,9 @@ while(!dev)
 	dev = BlinkTM.find_device
 
 	if dev
-		puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: Device discovered successfully. Path: #{dev}#{BlinkTM::RESET}"
+		puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device discovered successfully. Path: #{dev}#{BlinkTM::RESET}"
 	else
-		puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: No device found. Retrying #{retry_count += 1}#{BlinkTM::RESET}"
+		puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: No device found. Retrying #{retry_count += 1}#{BlinkTM::RESET}"
 		sleep 0.5
 	end
 end

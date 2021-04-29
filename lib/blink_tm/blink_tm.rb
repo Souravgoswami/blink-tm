@@ -163,7 +163,6 @@ module BlinkTM
 				# Rescuing from suspend
 				file.syswrite(str)
 				file.flush
-				p SECTORS
 
 				sleep REFRESH
 			end
