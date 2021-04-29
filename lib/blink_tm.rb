@@ -34,8 +34,10 @@ module BlinkTM
 	RESET = "\e[0m"
 
 	# Other constants
-	SECTORS = ::LinuxStat::FS.stat('/')[:block_size]
-	ROOT = File.split(::LinuxStat::Mounts.root)[1]
+	ROOT_DEV = ::LinuxStat::Mounts.root
+	ROOT = File.split(ROOT_DEV)[-1]
+
+	SECTORS = get_sector_size(ROOT_DEV)
 end
 
 require 'blink_tm/version'

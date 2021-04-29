@@ -1,8 +1,14 @@
 #include <stdio.h>
 #include <string.h>
-#include "ruby.h"
 
-VALUE get_diskstats (VALUE obj, VALUE path) {
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <linux/fs.h>
+
+#include "ruby.h"
+#include "sectors.h"
+
+VALUE getDiskstats (volatile VALUE obj, volatile VALUE path) {
 	FILE *file = fopen("/proc/diskstats", "r") ;
 	if(!file) return rb_ary_new() ;
 
@@ -27,5 +33,6 @@ VALUE get_diskstats (VALUE obj, VALUE path) {
 
 int Init_diskstats() {
 	VALUE blink_tm = rb_define_module("BlinkTM") ;
-	rb_define_module_function(blink_tm, "diskstats", get_diskstats, 1) ;
+	rb_define_module_function(blink_tm, "diskstats", getDiskstats, 1) ;
+	rb_define_module_function(blink_tm, "get_sector_size", getSectorSize, 1) ;
 }
