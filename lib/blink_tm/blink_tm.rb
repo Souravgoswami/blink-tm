@@ -77,7 +77,10 @@ module BlinkTM
 		io_r = io_w = 0
 
 		Thread.new {
-			cpu_u = LS::CPU.total_usage(POLLING).to_f while true
+			while true
+				_cpu_u = LS::CPU.total_usage(POLLING).to_f
+				cpu_u = _cpu_u.nan? ? 0 : _cpu_u.to_i
+			end
 		}
 
 		Thread.new {
@@ -124,12 +127,9 @@ module BlinkTM
 					sleep 0.05
 					retry
 				end
-
-				sleep 0.05
 			end
 
 			puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device ready!#{BlinkTM::RESET}"
-			refresh = 0
 
 			while true
 				# cpu(01234) memUsed(999993) swapUsed(999992) io_active(0)
@@ -154,11 +154,9 @@ module BlinkTM
 				# "#{convert_bytes(net_u)} #{convert_bytes(net_d)} "\
 				# "#{convert_bytes(io_r)} #{convert_bytes(io_w)}"
 
-				refresh ^= 1
-
-				str = "!##{cpu_u.nan? ? '000' : "%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
+				str = "!##{"%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
 				"#{convert_bytes(net_u)}#{convert_bytes(net_d)}"\
-				"#{convert_bytes(io_r)}#{convert_bytes(io_w)}#{refresh}~"
+				"#{convert_bytes(io_r)}#{convert_bytes(io_w)}1~"
 
 				# Rescuing from suspend
 				file.syswrite(str)
