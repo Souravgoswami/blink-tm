@@ -156,7 +156,7 @@ module BlinkTM
 
 				refresh ^= 1
 
-				str = "!##{"%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
+				str = "!##{cpu_u.nan? ? '000' : "%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
 				"#{convert_bytes(net_u)}#{convert_bytes(net_d)}"\
 				"#{convert_bytes(io_r)}#{convert_bytes(io_w)}#{refresh}~"
 
