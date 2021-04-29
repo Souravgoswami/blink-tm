@@ -8,6 +8,7 @@ VALUE getSectorSize (volatile VALUE obj, volatile VALUE path) {
 	if(fd < 0) return Qnil ;
 
 	short status = ioctl(fd, BLKSSZGET, &sSize) ;
+	close(fd) ;
 	if(status < 0) return Qnil ;
 
 	return USHORT2NUM(sSize) ;

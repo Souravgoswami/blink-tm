@@ -20,6 +20,8 @@ VALUE getDiskstats (volatile VALUE obj, volatile VALUE path) {
 		sscanf(lines, "%*s %*s %s %*s %*s %llu %*s %*s %*s %llu", lines, &read, &write) ;
 
 		if(strcmp(lines, p) == 0) {
+			fclose(file) ;
+
 			return rb_ary_new_from_args(
 				2,
 				ULL2NUM(read),
@@ -28,6 +30,7 @@ VALUE getDiskstats (volatile VALUE obj, volatile VALUE path) {
 		}
 	}
 
+	fclose(file) ;
 	return rb_ary_new() ;
 }
 
