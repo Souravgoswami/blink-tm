@@ -90,12 +90,12 @@ module BlinkTM
 
 		Thread.new {
 			while true
-				io_stat1 = iostat()
+				io_stat1 = BlinkTM.diskstats(ROOT)
 				sleep POLLING
-				io_stat2 = iostat()
+				io_stat2 = BlinkTM.diskstats(ROOT)
 
-				io_r = io_stat2[0].-(io_stat1[0]).fdiv(POLLING)
-				io_w = io_stat2[1].-(io_stat1[1]).fdiv(POLLING)
+				io_r = io_stat2[0].-(io_stat1[0]).*(SECTORS).fdiv(POLLING)
+				io_w = io_stat2[1].-(io_stat1[1]).*(SECTORS).fdiv(POLLING)
 			end
 		}
 
@@ -189,32 +189,6 @@ module BlinkTM
 			sleep 0.1
 			retry
 		end
-	end
-
-	def iostat
-		@@root_partition ||= IO.foreach('/proc/mounts').detect {
-			|x| x.split[1] == ?/
-		}.to_s.split[0].to_s.split(?/).to_a[-1]
-
-		@@sector_size ||= LS::FS.stat(?/)[:block_size]
-
-		io = []
-
-		IO.foreach('/proc/diskstats') { |x|
-			splitted = x.split
-
-			if splitted[2] == @@root_partition
-				# IO read / write
-				io.replace([
-					splitted[5].to_i * @@sector_size,
-					splitted[9].to_i * @@sector_size
-				])
-
-				break
-			end
-		}
-
-		io
 	end
 
 	extend(self)

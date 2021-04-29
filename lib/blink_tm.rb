@@ -1,5 +1,7 @@
 # Frozen_String_Literal: true
 require 'blink_tm/baudrate'
+require 'blink_tm/diskstats'
+require 'linux_stat'
 
 module BlinkTM
 	# Important Constants
@@ -30,9 +32,12 @@ module BlinkTM
 	ORANGE = "\e[38;2;245;155;20m"
 	BOLD = "\e[1m"
 	RESET = "\e[0m"
+
+	# Other constants
+	SECTORS = ::LinuxStat::FS.stat('/')[:block_size]
+	ROOT = File.split(::LinuxStat::Mounts.root)[1]
 end
 
 require 'blink_tm/version'
 require 'fcntl'
-require 'linux_stat'
 require 'blink_tm/blink_tm'
