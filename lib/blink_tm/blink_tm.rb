@@ -1,4 +1,4 @@
-#!/usr/bin/ruby -w
+#!/usr/bin/env ruby
 # Frozen_String_Literal: true
 
 module BlinkTM
@@ -93,9 +93,9 @@ module BlinkTM
 
 		Thread.new {
 			while true
-				io_stat1 = BlinkTM.diskstats(ROOT)
+				io_stat1 = LS::FS.total_io(ROOT)
 				sleep POLLING
-				io_stat2 = BlinkTM.diskstats(ROOT)
+				io_stat2 = LS::FS.total_io(ROOT)
 
 				io_r = io_stat2[0].-(io_stat1[0]).*(SECTORS).fdiv(POLLING)
 				io_w = io_stat2[1].-(io_stat1[1]).*(SECTORS).fdiv(POLLING)

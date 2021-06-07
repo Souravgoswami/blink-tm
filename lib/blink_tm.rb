@@ -1,7 +1,8 @@
 # Frozen_String_Literal: true
 require 'blink_tm/baudrate'
-require 'blink_tm/diskstats'
 require 'linux_stat'
+
+$-v = true
 
 module BlinkTM
 	# Important Constants
@@ -37,7 +38,7 @@ module BlinkTM
 	ROOT_DEV = ::LinuxStat::Mounts.root
 	ROOT = File.split(ROOT_DEV)[-1]
 
-	SECTORS = get_sector_size(ROOT_DEV)
+	SECTORS = ::LS::Filesystem.sectors(ROOT_DEV)
 
 	abort "#{BOLD}#{RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Can't get root partition#{RESET}" unless ROOT
 	abort "#{BOLD}#{RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Can't get sector size#{RESET}" unless SECTORS
