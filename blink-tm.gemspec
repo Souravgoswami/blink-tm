@@ -16,5 +16,5 @@ Gem::Specification.new do |s|
 	s.require_paths = ["lib"]
 	s.extensions = Dir.glob("ext/**/extconf.rb")
 	s.bindir = "exe"
-	s.add_runtime_dependency 'linux_stat', '>= 2.2.2'
+	s.add_runtime_dependency 'linux_stat', '>= 2.3.0'
 end
