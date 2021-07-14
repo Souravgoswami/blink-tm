@@ -169,8 +169,10 @@ module BlinkTM
 				crc32 = file.read.scrub![/\d+/]
 
 				unless crc32 == prev_crc32 || prev_crc32.empty?
-					raise SyncError if sync_error_count > 2
+					raise SyncError if sync_error_count > 1
 					sync_error_count += 1
+				else
+					sync_error_count = 0 unless sync_error_count == 0
 				end
 
 				prev_crc32 = BlinkTM.crc32(str[2..-2])
