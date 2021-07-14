@@ -131,6 +131,8 @@ module BlinkTM
 				end
 			end
 
+			sync_error_count = 0
+
 			puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device ready!#{BlinkTM::RESET}"
 			file.read
 
@@ -166,17 +168,12 @@ module BlinkTM
 				file.flush
 				crc32 = file.read.scrub![/\d+/]
 
-				prev_crc32 = BlinkTM.crc32(str[2..-2])
-
-				unless crc32 == prev_crc32
-					file.syswrite(?~.freeze)
-					file.syswrite(?#.freeze)
-					file.flush
-
-					sleep 0.05
-					redo
+				unless crc32 == prev_crc32 || prev_crc32.empty?
+					raise SyncError if sync_error_count > 2
+					sync_error_count += 1
 				end
 
+				prev_crc32 = BlinkTM.crc32(str[2..-2])
 				sleep REFRESH
 			end
 		rescue Interrupt, SystemExit, SignalException
@@ -193,7 +190,8 @@ module BlinkTM
 
 			retry
 		rescue BlinkTM::SyncError
-			sleep 0.01
+			file &.close
+			sleep 0.005
 			retry
 		rescue BlinkTM::DeviceNotReady
 			file &.close
