@@ -7,7 +7,7 @@ VALUE setBaudRate(volatile VALUE obj, volatile VALUE dev, volatile VALUE speed) 
 	char *device = StringValuePtr(dev) ;
 	unsigned int spd = NUM2UINT(speed) ;
 
-	int serial_port = open(device, O_RDWR) ;
+	int serial_port = open(device, O_RDWR | O_NOCTTY) ;
 	struct termios tty ;
 
 	char status = tcgetattr(serial_port, &tty) ;
@@ -22,7 +22,10 @@ VALUE setBaudRate(volatile VALUE obj, volatile VALUE dev, volatile VALUE speed) 
 		-isig -icanon -iexten -echo -echoe -echok -echoctl -echoke
 	*/
 
-	if(status != 0) return Qnil ;
+	if(status != 0) {
+		close(serial_port) ;
+		return Qnil ;
+	}
 
 	tty.c_cflag &= ~CSIZE ;
 	tty.c_cflag |= CS8 ;
@@ -46,18 +49,20 @@ VALUE setBaudRate(volatile VALUE obj, volatile VALUE dev, volatile VALUE speed) 
 	cfsetospeed(&tty, spd) ;
 	status = tcsetattr(serial_port, TCSANOW, &tty) ;
 
-	if (status == 0) return Qtrue ;
+	close(serial_port) ;
 
+	if (status == 0) return Qtrue ;
 	return Qfalse ;
 }
 
 VALUE getBaudRate(volatile VALUE obj, volatile VALUE dev) {
 	char *device = StringValuePtr(dev) ;
 
-	int serial_port = open(device, O_RDWR) ;
+	int serial_port = open(device, O_RDWR | O_NOCTTY | O_NONBLOCK) ;
 	struct termios tty ;
 
 	char status = tcgetattr(serial_port, &tty) ;
+	close(serial_port) ;
 
 	if(status == 0) {
 		unsigned int in = cfgetispeed(&tty) ;
