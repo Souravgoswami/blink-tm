@@ -6,18 +6,19 @@ $-v = true
 
 module BlinkTM
 	# Important Constants
-	BAUDRATE = BlinkTM::B57600
+	BAUDRATE = BlinkTM::B38400
 	SCANID = 'BTM'
 
 	# POLLING time, how often should CPU, Net, IO usages should be updated.
 	# Should always be a float.
-	POLLING = 0.375
+	POLLING = 0.250
 
 	# Refresh time, how often the main loop should run
 	REFRESH = 0.5
 
 	# Errors
 	NoDeviceError = Class.new(StandardError)
+	SyncError = Class.new(StandardError)
 	DeviceNotReady = Class.new(StandardError)
 
 	# Units
@@ -47,3 +48,4 @@ end
 require 'blink_tm/version'
 require 'fcntl'
 require 'blink_tm/blink_tm'
+require 'blink_tm/crc32'

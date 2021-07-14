@@ -102,6 +102,8 @@ module BlinkTM
 			end
 		}
 
+		prev_crc32 = ''
+
 		begin
 			raise NoDeviceError unless device
 
@@ -111,9 +113,9 @@ module BlinkTM
 
 			until in_sync
 				# Clear out any extra zombie bits
-				file.syswrite(?~)
+				file.syswrite(?~.freeze)
 				# Start the device
-				file.syswrite(?#)
+				file.syswrite(?#.freeze)
 				file.flush
 
 				sleep 0.125
@@ -130,6 +132,7 @@ module BlinkTM
 			end
 
 			puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device ready!#{BlinkTM::RESET}"
+			file.read
 
 			while true
 				# cpu(01234) memUsed(999993) swapUsed(999992) io_active(0)
@@ -161,6 +164,18 @@ module BlinkTM
 				# Rescuing from suspend
 				file.syswrite(str)
 				file.flush
+				crc32 = file.read.scrub![/\d+/]
+
+				prev_crc32 = BlinkTM.crc32(str[2..-2])
+
+				unless crc32 == prev_crc32
+					file.syswrite(?~.freeze)
+					file.syswrite(?#.freeze)
+					file.flush
+
+					sleep 0.05
+					redo
+				end
 
 				sleep REFRESH
 			end
@@ -176,6 +191,9 @@ module BlinkTM
 				sleep 0.1
 			end
 
+			retry
+		rescue BlinkTM::SyncError
+			sleep 0.01
 			retry
 		rescue BlinkTM::DeviceNotReady
 			file &.close
