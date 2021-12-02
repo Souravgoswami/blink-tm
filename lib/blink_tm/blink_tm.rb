@@ -31,8 +31,9 @@ module BlinkTM
 						begin
 							return x if File.open(x).read_nonblock(30).to_s.scrub.include?("BTM")
 						rescue EOFError
-							sleep 0.125
+							sleep 0.05
 							retry
+						rescue Errno::ENOENT, Errno::EIO
 						end
 					end
 				}
@@ -128,7 +129,7 @@ module BlinkTM
 			sleep 0.125
 
 			begin
-				if file.readpartial(8000).include?(?~)
+				if file.read_nonblock(8000).include?(?~)
 					in_sync = true
 					break
 				end
