@@ -11,7 +11,28 @@ written_pid = false
 
 BlinkTM::log "BlinkTM Version #{BlinkTM::VERSION}"
 if File.exist?(BlinkTM::LOCKFILE)
-	BlinkTM.log 'error', "Lockfile #{BlinkTM::LOCKFILE} already exists! If it's not running you might manually delete this to make blinktm work."
+	BlinkTM.log 'error', "Lock file #{BlinkTM::LOCKFILE} already exists! If it's not running you might manually delete this to make blinktm work."
+
+	pid = IO.read(BlinkTM::LOCKFILE) if File.readable?(BlinkTM::LOCKFILE)
+	process_name = File.readable?("/proc/#{pid}/cmdline") ? IO.read("/proc/#{pid}/cmdline") : 'unknown'
+	stat = File.readable?("/proc/#{pid}/stat") ? IO.read("/proc/#{pid}/stat") : nil
+	state = stat ? stat.gsub(/\(.+\)/, '').split[1] : 'unknown'
+	friendly_state = case state
+		when ?S then 'Sleeping'
+		when ?I then 'Idle'
+		when ?Z then 'Zombie'
+		when ?R then 'Running'
+		when ?T then 'Stopped'
+		else 'Unknown'
+	end
+
+	BlinkTM.log 'info', <<~EOF
+		Process Details:
+		\t- ID: #{pid}
+		\t- Command: #{File.basename(process_name.gsub(?\u0000, ?\s))}
+		\t- Status: #{friendly_state}
+	EOF
+
 	exit!
 else
 	begin
