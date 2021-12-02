@@ -4,8 +4,6 @@
 module BlinkTM
 	# Detect device
 	def find_device
-		dev = nil
-
 		Dir.glob('/sys/bus/usb/devices/*').each { |x|
 			v = File.join(x, 'idVendor')
 			vendor = IO.read(v).strip if File.readable?(v)
@@ -31,13 +29,7 @@ module BlinkTM
 
 					if File.readable?(x)
 						begin
-							if File.open(x).readpartial(30).to_s.scrub.include?("BTM")
-								puts "#{BOLD}#{ORANGE}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Multiple Blink Task "\
-								"Manager Hardware Found! "\
-								"Selecting: #{vendor}:#{product}#{RESET}" if dev
-
-								dev = x
-							end
+							return x if File.open(x).read_nonblock(30).to_s.scrub.include?("BTM")
 						rescue EOFError
 							sleep 0.125
 							retry
@@ -46,6 +38,18 @@ module BlinkTM
 				}
 			end
 		}
+
+		nil
+	end
+
+	@@retry_count = 0
+	def find_device!
+		while(!(dev = BlinkTM.find_device))
+			puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: No device found. Retrying #{@@retry_count += 1}#{BlinkTM::RESET}"
+			sleep 0.5
+		end
+
+		puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device discovered successfully. Path: #{dev}#{BlinkTM::RESET}"
 
 		dev
 	end
@@ -103,112 +107,89 @@ module BlinkTM
 		}
 
 		prev_crc32 = ''
+		raise NoDeviceError unless device
 
-		begin
-			raise NoDeviceError unless device
+		in_sync = false
 
-			in_sync = false
+		fd = IO.sysopen(
+			device,
+			Fcntl::O_RDWR | Fcntl::O_NOCTTY | Fcntl::O_NONBLOCK | Fcntl::O_TRUNC
+		)
 
-			fd = IO.sysopen(
-				device,
-				Fcntl::O_RDWR | Fcntl::O_NOCTTY | Fcntl::O_NONBLOCK | Fcntl::O_TRUNC
-			)
+		file = IO.open(fd)
+		yield file
 
-			file = IO.open(fd)
+		until in_sync
+			# Clear out any extra zombie bits
+			file.syswrite(?~.freeze)
+			# Start the device
+			file.syswrite(?#.freeze)
+			file.flush
 
-			until in_sync
-				# Clear out any extra zombie bits
-				file.syswrite(?~.freeze)
-				# Start the device
-				file.syswrite(?#.freeze)
-				file.flush
+			sleep 0.125
 
-				sleep 0.125
-
-				begin
-					if file.readpartial(8000).include?(?~)
-						in_sync = true
-						break
-					end
-				rescue EOFError
-					sleep 0.05
-					retry
+			begin
+				if file.readpartial(8000).include?(?~)
+					in_sync = true
+					break
 				end
+			rescue EOFError
+				sleep 0.05
+				retry
+			end
+		end
+
+		sync_error_count = 0
+
+		puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device ready!#{BlinkTM::RESET}"
+		file.read
+
+		while true
+			# cpu(01234) memUsed(999993) swapUsed(999992) io_active(0)
+			# netUpload(999991) netDownload(999990)
+			# disktotal(999990) diskused(999990)
+
+			memstat = LS::Memory.stat
+			mem_u = memstat[:used].to_i.*(1024).*(100).fdiv(memstat[:total].to_i * 1024).round
+
+			swapstat = LS::Swap.stat
+			swap_u = swapstat[:used].to_i.*(1024).*(100).fdiv(swapstat[:total].to_i * 1024).round
+
+			# Output has to be exactly this long. If not, blink-taskmanager shows invalid result.
+			# No string is split inside blink-task manager, it just depends on the string length.
+			#
+			# cpu(100) memUsed(100) swapUsed(100)
+			# netDownload(9991) netUpload(9991)
+			# ioWrite(9991) ioRead(9991)
+
+			# Debugging string
+			str = "#{"%03d" % cpu_u} #{"%03d" % mem_u} #{"%03d" % swap_u} "\
+			"#{convert_bytes(net_u)} #{convert_bytes(net_d)} "\
+			"#{convert_bytes(io_r)} #{convert_bytes(io_w)}"
+
+			str = "!##{"%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
+			"#{convert_bytes(net_u)}#{convert_bytes(net_d)}"\
+			"#{convert_bytes(io_r)}#{convert_bytes(io_w)}1~"
+
+			# Rescuing from suspend
+			file.syswrite(str)
+			file.flush
+			crc32 = file.read.scrub![/\d+/]
+
+			unless crc32 == prev_crc32 || prev_crc32.empty?
+				raise SyncError if sync_error_count > 1
+				sync_error_count += 1
+			else
+				sync_error_count = 0 unless sync_error_count == 0
 			end
 
-			sync_error_count = 0
+			prev_crc32 = BlinkTM.crc32(str[2..-2])
+			sleep REFRESH
+		end
 
-			puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device ready!#{BlinkTM::RESET}"
-			file.read
-
-			while true
-				# cpu(01234) memUsed(999993) swapUsed(999992) io_active(0)
-				# netUpload(999991) netDownload(999990)
-				# disktotal(999990) diskused(999990)
-
-				memstat = LS::Memory.stat
-				mem_u = memstat[:used].to_i.*(1024).*(100).fdiv(memstat[:total].to_i * 1024).round
-
-				swapstat = LS::Swap.stat
-				swap_u = swapstat[:used].to_i.*(1024).*(100).fdiv(swapstat[:total].to_i * 1024).round
-
-				# Output has to be exactly this long. If not, blink-taskmanager shows invalid result.
-				# No string is split inside blink-task manager, it just depends on the string length.
-				#
-				# cpu(100) memUsed(100) swapUsed(100)
-				# netDownload(9991) netUpload(9991)
-				# ioWrite(9991) ioRead(9991)
-
-				# Debugging string
-				# str = "#{"%03d" % cpu_u} #{"%03d" % mem_u} #{"%03d" % swap_u} "\
-				# "#{convert_bytes(net_u)} #{convert_bytes(net_d)} "\
-				# "#{convert_bytes(io_r)} #{convert_bytes(io_w)}"
-
-				str = "!##{"%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
-				"#{convert_bytes(net_u)}#{convert_bytes(net_d)}"\
-				"#{convert_bytes(io_r)}#{convert_bytes(io_w)}1~"
-
-				# Rescuing from suspend
-				file.syswrite(str)
-				file.flush
-				crc32 = file.read.scrub![/\d+/]
-
-				unless crc32 == prev_crc32 || prev_crc32.empty?
-					raise SyncError if sync_error_count > 1
-					sync_error_count += 1
-				else
-					sync_error_count = 0 unless sync_error_count == 0
-				end
-
-				prev_crc32 = BlinkTM.crc32(str[2..-2])
-				sleep REFRESH
-			end
-		rescue Interrupt, SystemExit, SignalException
-			file &.close
-			exit 0
-		rescue Errno::ENOENT, BlinkTM::NoDeviceError
-			file &.close
-			device = find_device
-
-			unless device
-				puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Error establishing connection. Don't worry if this is a valid device. Retrying...#{BlinkTM::RESET}"
-				sleep 0.1
-			end
-
-			retry
-		rescue BlinkTM::SyncError
-			file &.close
-			sleep 0.005
-			retry
-		rescue BlinkTM::DeviceNotReady
-			file &.close
+		unless device
+			puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Error establishing connection. Don't worry if this is a valid device. Retrying...#{BlinkTM::RESET}"
 			sleep 0.1
-			retry
-		rescue Exception
-			puts $!.full_message
-			file &.close
-			sleep 0.1
-			retry
 		end
 	end
 

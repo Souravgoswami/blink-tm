@@ -34,6 +34,7 @@ module BlinkTM
 	ORANGE = "\e[38;2;245;155;20m"
 	BOLD = "\e[1m"
 	RESET = "\e[0m"
+	LOCKFILE = '/tmp/blinktaskmanager.pid'
 
 	# Other constants
 	ROOT_DEV = ::LinuxStat::Mounts.root

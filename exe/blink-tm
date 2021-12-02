@@ -1,19 +1,46 @@
 #!/usr/bin/env ruby
 require 'blink_tm'
 
-# Find Device running Blink Taskmanager
-dev = nil
-retry_count = 0
 
-while(!dev)
-	dev = BlinkTM.find_device
+if ARGV.any?(/^\-(\-version|v)$/)
+	puts "BlinkTM Version #{BlinkTM::BOLD}#{BlinkTM::VERSION}#{BlinkTM::RESET}"
+	exit
+end
 
-	if dev
-		puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device discovered successfully. Path: #{dev}#{BlinkTM::RESET}"
-	else
-		puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: No device found. Retrying #{retry_count += 1}#{BlinkTM::RESET}"
-		sleep 0.5
+written_pid = false
+
+if File.exist?(BlinkTM::LOCKFILE)
+	puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Lockfile #{BlinkTM::LOCKFILE} already exists! If it's not running you might manually delete this to make blinktm work.#{BlinkTM::RESET}"
+	exit!
+else
+	begin
+		IO.write(BlinkTM::LOCKFILE, $$)
+		written_pid = true
+	rescue Exception
+		puts "Can't write to #{BlinkTM::LOCKFILE}"
+		exit!
 	end
 end
 
-BlinkTM.start(dev)
+retry_count = 0
+
+# Find Device running Blink Taskmanager
+dev = BlinkTM::find_device!
+file = nil
+
+begin
+	BlinkTM.start(dev) { |x| file = x }
+rescue BlinkTM::SyncError
+	sleep 1
+	retry
+rescue Errno::ENOENT, Errno::EIO, BlinkTM::NoDeviceError
+	file &.close
+	sleep 0.125
+	dev = BlinkTM::find_device!
+	retry
+rescue Interrupt, SystemExit, SignalException
+	file &.close
+	File.delete(BlinkTM::LOCKFILE)
+rescue Exception
+	File.delete(BlinkTM::LOCKFILE)
+end
