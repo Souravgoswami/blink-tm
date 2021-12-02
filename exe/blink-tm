@@ -9,8 +9,9 @@ end
 
 written_pid = false
 
+BlinkTM::log "BlinkTM Version #{BlinkTM::VERSION}"
 if File.exist?(BlinkTM::LOCKFILE)
-	puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Lockfile #{BlinkTM::LOCKFILE} already exists! If it's not running you might manually delete this to make blinktm work.#{BlinkTM::RESET}"
+	BlinkTM.log 'error', "Lockfile #{BlinkTM::LOCKFILE} already exists! If it's not running you might manually delete this to make blinktm work."
 	exit!
 else
 	begin

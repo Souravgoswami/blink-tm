@@ -12,19 +12,19 @@ module BlinkTM
 			product = IO.read(p).strip if File.readable?(p)
 
 			if vendor == '1a86' && product == '7523'
-				puts "#{BOLD}#{GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: A potential device discovered: #{vendor}:#{product}#{RESET}"
+				log 'warn', "A potential device discovered: #{vendor}:#{product}"
 
 				Dir.glob('/dev/ttyUSB[0-9]*').each { |x|
 					if File.writable?(x)
-						puts "#{BlinkTM::BOLD}#{BlinkTM::BLUE}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Changing baudrate to 57600...#{BlinkTM::RESET}"
+						log 'success', "Changing baudrate to 57600..."
 
 						if BlinkTM.set_baudrate(x, BlinkTM::BAUDRATE)
-							puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Successfully Changed baudrate to 57600...#{BlinkTM::RESET}"
+							log 'success', 'Successfully Changed baudrate to 57600...'
 						else
-							puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Cannot change the baudrate#{BlinkTM::RESET}"
+							log 'error', 'Cannot change the baudrate'
 						end
 					else
-						"#{BOLD}#{RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: No permission granted to change Baudrate#{RESET}"
+						log 'error', 'No permission granted to change Baudrate'
 					end
 
 					if File.readable?(x)
@@ -45,12 +45,11 @@ module BlinkTM
 	@@retry_count = 0
 	def find_device!
 		while(!(dev = BlinkTM.find_device))
-			puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: No device found. Retrying #{@@retry_count += 1}#{BlinkTM::RESET}"
+			log 'error', "No device found. Retrying #{@@retry_count += 1}"
 			sleep 0.5
 		end
 
-		puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device discovered successfully. Path: #{dev}#{BlinkTM::RESET}"
-
+		log 'success', "Device discovered successfully. Path: #{dev}#{BlinkTM::RESET}"
 		dev
 	end
 
@@ -141,7 +140,7 @@ module BlinkTM
 
 		sync_error_count = 0
 
-		puts "#{BlinkTM::BOLD}#{BlinkTM::GREEN}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Device ready!#{BlinkTM::RESET}"
+		log 'success', 'Device ready!'
 		file.read
 
 		while true
@@ -191,6 +190,20 @@ module BlinkTM
 			puts "#{BlinkTM::BOLD}#{BlinkTM::RED}:: #{Time.now.strftime('%H:%M:%S.%2N')}: Error establishing connection. Don't worry if this is a valid device. Retrying...#{BlinkTM::RESET}"
 			sleep 0.1
 		end
+	end
+
+	def log(type, message = nil)
+		message, type = type, nil if type && !message
+
+		colour = case type
+			when 0, 'fatal', 'error' then BlinkTM::RED
+			when 1, 'warn' then BlinkTM::ORANGE
+			when 2, 'info' then BlinkTM::BLUE
+			when 3, 'success', 'ok' then BlinkTM::GREEN
+			else ''
+		end
+
+		puts "#{BlinkTM::BOLD}#{colour}:: #{Time.now.strftime('%H:%M:%S.%2N')}: #{message}#{BlinkTM::RESET}"
 	end
 
 	extend(self)
