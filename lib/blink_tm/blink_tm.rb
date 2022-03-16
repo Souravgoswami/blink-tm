@@ -83,7 +83,7 @@ module BlinkTM
 		Thread.new {
 			while true
 				_cpu_u = LS::CPU.total_usage(POLLING).to_f
-				cpu_u = _cpu_u.nan? ? 0 : _cpu_u.to_i
+				cpu_u = _cpu_u.nan? ? 255 : _cpu_u.to_i
 			end
 		}
 
@@ -150,11 +150,12 @@ module BlinkTM
 			# disktotal(999990) diskused(999990)
 
 			memstat = LS::Memory.stat
-			mem_u = memstat[:used].to_i.*(1024).*(100).fdiv(memstat[:total].to_i * 1024).round
+			_mem_u = memstat[:used].to_i.*(1024).*(100).fdiv(memstat[:total].to_i * 1024)
+			mem_u = _mem_u.nan? ? 255 : _mem_u.round
 
 			swapstat = LS::Swap.stat
 			_swap_u = swapstat[:used].to_i.*(1024).*(100).fdiv(swapstat[:total].to_i * 1024)
-			swap_u = _swap_u.nan? ? 0 : _swap_u.round
+			swap_u = _swap_u.nan? ? 255 : _swap_u.round
 
 			# Output has to be exactly this long. If not, blink-taskmanager shows invalid result.
 			# No string is split inside blink-task manager, it just depends on the string length.
@@ -164,9 +165,9 @@ module BlinkTM
 			# ioWrite(9991) ioRead(9991)
 
 			# Debugging string
-			str = "#{"%03d" % cpu_u} #{"%03d" % mem_u} #{"%03d" % swap_u} "\
-			"#{convert_bytes(net_u)} #{convert_bytes(net_d)} "\
-			"#{convert_bytes(io_r)} #{convert_bytes(io_w)}"
+			# str = "#{"%03d" % cpu_u} #{"%03d" % mem_u} #{"%03d" % swap_u} "\
+			# "#{convert_bytes(net_u)} #{convert_bytes(net_d)} "\
+			# "#{convert_bytes(io_r)} #{convert_bytes(io_w)}"
 
 			str = "!##{"%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
 			"#{convert_bytes(net_u)}#{convert_bytes(net_d)}"\
