@@ -153,7 +153,8 @@ module BlinkTM
 			mem_u = memstat[:used].to_i.*(1024).*(100).fdiv(memstat[:total].to_i * 1024).round
 
 			swapstat = LS::Swap.stat
-			swap_u = swapstat[:used].to_i.*(1024).*(100).fdiv(swapstat[:total].to_i * 1024).round
+			_swap_u = swapstat[:used].to_i.*(1024).*(100).fdiv(swapstat[:total].to_i * 1024)
+			swap_u = _swap_u.nan? ? 0 : _swap_u.round
 
 			# Output has to be exactly this long. If not, blink-taskmanager shows invalid result.
 			# No string is split inside blink-task manager, it just depends on the string length.
