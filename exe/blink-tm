@@ -64,5 +64,23 @@ rescue Interrupt, SystemExit, SignalException
 	file &.close
 	File.delete(BlinkTM::LOCKFILE)
 rescue Exception
+
+	mesg = <<~EOF
+		:: Time: #{Time.now.strftime("%A %d %B %Y, %H:%M:%S:%5N %p")}:
+		#{$!.full_message}
+
+		Please notify these bugs to the issue tracker.
+		#{'-' * 70}
+	EOF
+
+	if File.writable?(BlinkTM::LOGFILE)
+		log = File.open(BlinkTM::LOGFILE, 'a')
+		log.write(mesg)
+		log.close
+	else
+		puts "Logs aren't writable\n\nHere's a detailed message of what has happened:"
+		puts mesg
+	end
+ensure
 	File.delete(BlinkTM::LOCKFILE)
 end

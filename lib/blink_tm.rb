@@ -35,6 +35,7 @@ module BlinkTM
 	BOLD = "\e[1m"
 	RESET = "\e[0m"
 	LOCKFILE = '/tmp/blinktaskmanager.pid'
+	LOGFILE = '/tmp/blinktaskmanager.err.log'
 
 	# Other constants
 	ROOT_DEV = ::LinuxStat::Mounts.root
