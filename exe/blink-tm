@@ -47,10 +47,10 @@ end
 retry_count = 0
 
 # Find Device running Blink Taskmanager
-dev = BlinkTM::find_device!
 file = nil
 
 begin
+	dev = BlinkTM::find_device!
 	BlinkTM.start(dev) { |x| file = x }
 rescue BlinkTM::SyncError
 	sleep 1
@@ -63,7 +63,6 @@ rescue Errno::ENOENT, Errno::EIO, BlinkTM::NoDeviceError
 rescue Interrupt, SystemExit, SignalException
 	file &.close
 rescue Exception
-
 	mesg = <<~EOF
 		:: Time: #{Time.now.strftime("%A %d %B %Y, %H:%M:%S:%5N %p")}:
 		#{$!.full_message}
