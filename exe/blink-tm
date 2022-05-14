@@ -62,7 +62,6 @@ rescue Errno::ENOENT, Errno::EIO, BlinkTM::NoDeviceError
 	retry
 rescue Interrupt, SystemExit, SignalException
 	file &.close
-	File.delete(BlinkTM::LOCKFILE)
 rescue Exception
 
 	mesg = <<~EOF
