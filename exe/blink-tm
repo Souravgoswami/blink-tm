@@ -7,6 +7,19 @@ if ARGV.any?(/^\-(\-version|v)$/)
 	exit
 end
 
+coords = ARGV.select { |x| x[/^\-(\-coords|c)=.+$/] }.last
+daylight_checker_options = { latitude: nil, longitude: nil }
+
+if coords && !coords.empty?
+	lat_long = coords.split('=').last
+	lat, long = lat_long.split(',')
+
+	abort('Please specify latitude and longitude splitted by a comma (,). For example -22.88,88.33') if !lat || !long
+
+	daylight_checker_options[:latitude] = lat
+	daylight_checker_options[:longitude] = long
+end
+
 written_pid = false
 
 BlinkTM::log "BlinkTM Version #{BlinkTM::VERSION}"
@@ -51,7 +64,7 @@ file = nil
 
 begin
 	dev = BlinkTM::find_device!
-	BlinkTM.start(dev) { |x| file = x }
+	BlinkTM.start(dev, daylight_checker_options) { |x| file = x }
 rescue BlinkTM::SyncError
 	sleep 1
 	retry

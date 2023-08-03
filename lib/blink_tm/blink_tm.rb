@@ -74,11 +74,15 @@ module BlinkTM
 		"%06.2f".%(n).split('.').join
 	end
 
-	def start(device)
+	def start(device, daylight_checker_options)
 		return false unless device
+
+		latitude, longitude = daylight_checker_options[:latitude]&.to_f, daylight_checker_options[:longitude]&.to_f
+		log 'success', "Set latitude to #{latitude}, longitude to #{longitude}" if !latitude.nil? && !longitude.nil?
 
 		cpu_u = mem_u = swap_u = iostat = net_u = net_d = 0
 		io_r = io_w = 0
+		built_in_led_state = 0
 
 		Thread.new {
 			while true
@@ -107,6 +111,7 @@ module BlinkTM
 		}
 
 		prev_crc32 = ''
+		prev_time = { min: -1, hour: -1 }
 		raise NoDeviceError unless device
 
 		in_sync = false
@@ -157,6 +162,22 @@ module BlinkTM
 			_swap_u = swapstat[:used].to_i.*(1024).*(100).fdiv(swapstat[:total].to_i * 1024)
 			swap_u = _swap_u.nan? ? 255 : _swap_u.round
 
+			time_minute = Time.now.min
+			time_hour = Time.now.hour
+
+			if (time_minute != prev_time[:min] || time_hour != prev_time[:hour]) && !latitude.nil? && !longitude.nil?
+				dark_outside = DaylightChecker.new(
+					latitude,
+					longitude,
+					Time.now
+				).is_it_dark?
+
+				built_in_led_state = dark_outside ? 1 : 0
+
+				prev_time[:min] = time_minute
+				prev_time[:hour] = time_hour
+			end
+
 			# Output has to be exactly this long. If not, blink-taskmanager shows invalid result.
 			# No string is split inside blink-task manager, it just depends on the string length.
 			#
@@ -171,7 +192,7 @@ module BlinkTM
 
 			str = "!##{"%03d" % cpu_u}#{"%03d" % mem_u}#{"%03d" % swap_u}"\
 			"#{convert_bytes(net_u)}#{convert_bytes(net_d)}"\
-			"#{convert_bytes(io_r)}#{convert_bytes(io_w)}1~"
+			"#{convert_bytes(io_r)}#{convert_bytes(io_w)}#{built_in_led_state}1~"
 
 			# Rescuing from suspend
 			file.syswrite(str)

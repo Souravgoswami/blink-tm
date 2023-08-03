@@ -49,5 +49,6 @@ end
 
 require 'blink_tm/version'
 require 'fcntl'
+require 'blink_tm/daylight_checker'
 require 'blink_tm/blink_tm'
 require 'blink_tm/crc32'
